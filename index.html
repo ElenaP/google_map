@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+</head>
+<style>
+    #map {
+        width: 500px;
+        height: 300px;
+    }
+
+    /* chk-btn CSS from
+    http://stackoverflow.com/questions/30100978/how-to-make-a-check-button-hidden-checkbox-with-label-as-a-button-css-only
+    */
+
+    input.chk-btn {
+        display: none;
+    }
+    input.chk-btn + label {
+        border: 1px solid grey;
+        background: ghoswhite;
+        padding: 5px 8px;
+        cursor: pointer;
+        border-radius: 5px;
+
+    }
+    input.chk-btn:not(:checked) + label:hover {
+        box-shadow: 0px 1px 3px;
+
+    }
+    input.chk-btn + label:active,
+    input.chk-btn:checked + label {
+        box-shadow: 0px 0px 3px inset;
+        background: #8cc472;
+
+    }
+</style>
+<body>
+    <div id="buttons">
+
+        <input type="checkbox" name="filter" id="shower" class='chk-btn'>
+        <label for='shower'>Shower</label>
+
+        <input type="checkbox" name="filter" id="flush" class='chk-btn'>
+        <label for='flush'>Flush Toilet</label>
+
+        <input type="checkbox" name="filter" id="vault" class='chk-btn'>
+        <label for='vault'>Vault Toilet</label>
+        <br>
+    </div>
+    <br>
+    <div id="map"></div>
+    <br>
+    <div id="campground_info"></div>
+    <script>
+        //https://developers.google.com/maps/documentation/javascript/tutorial?hl=ru
+        //https://snazzymaps.com/explore?tag=greyscale
+        //http://maps.stamen.com/#toner/12/37.7706/-122.3782
+        //http://www.mapstylr.com/
+        var map;
+        var markers = [];
+
+        // start out with filter features set to false, so no filtering happens by default
+        var filters = {shower:false, vault:false, flush:false}
+
+        $(function () {
+            $('input[name=filter]').change(function (e) {
+                map_filter(this.id);
+                filter_markers()
+            });
+        })
+
+        var get_set_options = function() {
+            ret_array = []
+            for (option in filters) {
+                if (filters[option]) {
+                    ret_array.push(option)
+                }
+            }
+            return ret_array;
+        }
+
+        var filter_markers = function() {
+            set_filters = get_set_options()
+
+            // for each marker, check to see if all required options are set
+            for (i = 0; i < markers.length; i++) {
+                marker = markers[i];
+
+                // start the filter check assuming the marker will be displayed
+                // if any of the required features are missing, set 'keep' to false
+                // to discard this marker
+                keep=true
+                mapset = map
+                for (opt=0; opt<set_filters.length; opt++) {
+                    if (!marker.properties[set_filters[opt]]) {
+                        keep = false;
+                    }
+                }
+                marker.setVisible(keep)
+            }
+        }
+
+        var map_filter = function(id_val) {
+            if (filters[id_val])
+                filters[id_val] = false
+            else
+                filters[id_val] = true
+        }
+
+
+        // after the geojson is loaded, iterate through the map data to create markers
+        // and add the pop up (info) windows
+        function loadMarkers() {
+            console.log('creating markers')
+            var infoWindow = new google.maps.InfoWindow();
+            var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
+            var icons = {
+                info: {
+                    icon: iconBase + 'info-i_maps.png'
+                }
+            };
+            geojson_url = 'https://raw.githubusercontent.com/gizm00/blog_code/master/appendto/python_maps_2/collection.geojson'
+            $.getJSON(geojson_url, function(result) {
+                // Post select to url.
+                data = result['features']
+                $.each(data, function(key, val) {
+                    var point = new google.maps.LatLng(
+                        parseFloat(val['geometry']['coordinates'][1]),
+                        parseFloat(val['geometry']['coordinates'][0]));
+                    var titleText = val['properties']['title']
+                    var descriptionText = val['properties']['description']
+                    var icon = val['properties']['type']
+                    var marker = new google.maps.Marker({
+                        position: point,
+                        icon: icons.info.icon,
+                        title: titleText,
+                        map: map,
+                        properties: val['properties']
+                    });
+
+                    var markerInfo = "<div><h3>" + titleText + "</h3>Amenities: " + descriptionText + " <a href='#'>Link</a></div>"
+
+
+                    marker.addListener('click', function() {
+                        infoWindow.close()
+                        infoWindow.setContent(markerInfo)
+                        infoWindow.open(map, marker)
+                    });
+                    markers.push(marker)
+                });
+            });
+        }
+
+        function initMap() {
+            // Create a map object and specify the DOM element for display.
+            var uluru = {lat: 42.9456, lng: -122.2};
+            map = new google.maps.Map(document.getElementById('map'), {
+                /*styles: [
+                    {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
+                    {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]},
+                    {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]},
+                    {
+                        featureType: 'administrative.locality',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#d59563'}]
+                    },
+                    {
+                        featureType: 'poi',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#d59563'}]
+                    },
+                    {
+                        featureType: 'poi.park',
+                        elementType: 'geometry',
+                        stylers: [{color: '#263c3f'}]
+                    },
+                    {
+                        featureType: 'poi.park',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#6b9a76'}]
+                    },
+                    {
+                        featureType: 'road',
+                        elementType: 'geometry',
+                        stylers: [{color: '#38414e'}]
+                    },
+                    {
+                        featureType: 'road',
+                        elementType: 'geometry.stroke',
+                        stylers: [{color: '#212a37'}]
+                    },
+                    {
+                        featureType: 'road',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#9ca5b3'}]
+                    },
+                    {
+                        featureType: 'road.highway',
+                        elementType: 'geometry',
+                        stylers: [{color: '#746855'}]
+                    },
+                    {
+                        featureType: 'road.highway',
+                        elementType: 'geometry.stroke',
+                        stylers: [{color: '#1f2835'}]
+                    },
+                    {
+                        featureType: 'road.highway',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#f3d19c'}]
+                    },
+                    {
+                        featureType: 'transit',
+                        elementType: 'geometry',
+                        stylers: [{color: '#2f3948'}]
+                    },
+                    {
+                        featureType: 'transit.station',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#d59563'}]
+                    },
+                    {
+                        featureType: 'water',
+                        elementType: 'geometry',
+                        stylers: [{color: '#17263c'}]
+                    },
+                    {
+                        featureType: 'water',
+                        elementType: 'labels.text.fill',
+                        stylers: [{color: '#515c6d'}]
+                    },
+                    {
+                        featureType: 'water',
+                        elementType: 'labels.text.stroke',
+                        stylers: [{color: '#17263c'}]
+                    }
+                ],*/
+                mapTypeId: google.maps.MapTypeId.TERRAIN,
+                zoom: 10,
+                center: uluru
+            });
+            loadMarkers();
+        }
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDijIAZAvhKnS9rDOwdTwiwBkUdylScmtI&callback=initMap" async defer></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
+</head>
+<body>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="form-group">
+                            <label class="sr-only" for="title">Title</label>
+                            <input type="text" class="form-control" name="title" id="title" placeholder="Title" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-group">
+                            <label class="sr-only" for="lat">Latitude</label>
+                            <input type="text" class="form-control" name="latitude" id="lat" placeholder="Latitude" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-group">
+                            <label class="sr-only" for="lon">Longitude</label>
+                            <input type="text" class="form-control" name="longitude" id="lon" placeholder="Longitude" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-group">
+                            <label class="sr-only" for="desc">Description</label>
+                            <input type="text" class="form-control" name="description" id="desc" placeholder="Description" required>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-group">
+                            <label class="sr-only" for="type">Type</label>
+                            <select id="type" class="form-control">
+                                <option>Type</option>
+                                <option value="point">Point</option>
+                                <option value="info">Info</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="submit" class="btn btn-default">Save</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+<script>
+    window.addEventListener('load', function() {
+        var state = {
+            items: []
+        };
+        var data = localStorage.getItem('data');
+        if(data) {
+            state = JSON.parse(localStorage.getItem('data'));
+        }
+
+        var button = document.querySelector('button'),
+            table = document.querySelector('.table tbody'),
+            inputTitle = document.querySelector('#title'),
+            inputLat = document.querySelector('#lat'),
+            inputLon = document.querySelector('#lon'),
+            inputDesc = document.querySelector('#desc');
+
+        var geoInfo = [];
+        var markerInfo = "<td>" +  + "</td>" +  + "</tr>";
+
+
+        button.addEventListener('click', function() {
+            var title = inputTitle.value;
+            var lat = inputLat.value;
+            var lon = inputLon.value;
+            var description = inputDesc.value;
+            var el = document.createElement('tr');
+            el.innerHTML = "<td>" + title + "</td><td>" + lat + "</td><td>" + lon + "</td><td>" + description + "</td>";
+            table.insertBefore(el, table.children[0]);
+            inputTitle.value = "";
+            state.items.push(title);
+            localStorage.setItem('data', JSON.stringify(state));
+            addGeoInfoInTable();
+            saveGeoInfo();
+            //$('#campground_info').html(markerInfo)
+        });
+
+        function addGeoInfoInTable() {
+
+        }
+
+        function saveGeoInfo() {
+            alert('SAVE');
+        }
+    });
+</script>
+</html>
