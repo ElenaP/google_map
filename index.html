@@ -114,19 +114,50 @@
         // after the geojson is loaded, iterate through the map data to create markers
         // and add the pop up (info) windows
         function loadMarkers() {
-            console.log('creating markers')
             var infoWindow = new google.maps.InfoWindow();
             var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
             var icons = {
+                point: {
+                    icon: iconBase + 'info-i_maps.png'
+                },
                 info: {
                     icon: iconBase + 'info-i_maps.png'
                 }
             };
-            geojson_url = 'https://raw.githubusercontent.com/gizm00/blog_code/master/appendto/python_maps_2/collection.geojson'
+            var data = JSON.parse(localStorage.getItem('data')).items;
+            $.each(data, function(key, val) {
+                console.log(parseFloat(val['lat']));
+                var point = new google.maps.LatLng(
+                    parseFloat(val['lat']),
+                    parseFloat(val['lon'])
+                );
+                var titleText = val['title'];
+                var descriptionText = val['description'];
+                var type = val['type'];
+                var marker = new google.maps.Marker({
+                    position: point,
+                    icon: icons[type].icon,
+                    title: titleText,
+                    map: map
+                });
+
+                var markerInfo = "<div><h3>" + titleText + "</h3>Amenities: " + descriptionText + "</div>"
+
+
+                marker.addListener('click', function() {
+                    infoWindow.close()
+                    infoWindow.setContent(markerInfo)
+                    infoWindow.open(map, marker)
+                });
+                markers.push(marker);
+                console.log(markers);
+            });
+            /*geojson_url = 'https://raw.githubusercontent.com/gizm00/blog_code/master/appendto/python_maps_2/collection.geojson'
             $.getJSON(geojson_url, function(result) {
                 // Post select to url.
                 data = result['features']
                 $.each(data, function(key, val) {
+                    console.log(parseFloat(val['geometry']['coordinates'][1]));
                     var point = new google.maps.LatLng(
                         parseFloat(val['geometry']['coordinates'][1]),
                         parseFloat(val['geometry']['coordinates'][0]));
@@ -151,7 +182,7 @@
                     });
                     markers.push(marker)
                 });
-            });
+            });*/
         }
 
         function initMap() {
